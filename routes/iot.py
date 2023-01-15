@@ -10,6 +10,7 @@ from utils.utils import generate_short_id
 import pymongo
 from fastapi.responses import JSONResponse
 from fastapi import status
+from fastapi_pagination import add_pagination, Page, paginate
 
 
 iot = APIRouter(
@@ -38,7 +39,7 @@ async def post_sensor_data(data: SensorData, request: Request, key: str):
     c = await request.json()
     return {"message": "New leg data added", "data": c}
 
-@iot.get('/sensor-data', response_model=List[SensorDataDb])
+@iot.get('/sensor-data', response_model=Page[SensorDataDb])
 async def get_sensor_data(key: str):
     if not key:
         return JSONResponse({"message": "pass in key"}, status_code=status.HTTP_400_BAD_REQUEST)
@@ -46,7 +47,7 @@ async def get_sensor_data(key: str):
         return JSONResponse({"message": "Invalid key"}, status_code=status.HTTP_400_BAD_REQUEST)
     db_leg_data = db.legdata.find().sort([("date_added", pymongo.DESCENDING)])
     leg_data = [SensorDataDb(**leg_datum) for leg_datum in db_leg_data]
-    return leg_data
+    return paginate(leg_data)
 
 
 @sio.on("connect") 
@@ -65,3 +66,5 @@ async def connect(sid, env, auth):
 @sio.on("disconnect")
 async def disconnect(sid):
     print("SocketIO disconnect")
+
+add_pagination(iot)
