@@ -17,3 +17,6 @@ class SensorData(BaseModel):
 class SensorDataDb(SensorData):
     date_added: datetime
     short_id: str
+
+class SensorState(BaseModel):
+    active: bool
