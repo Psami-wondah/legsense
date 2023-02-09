@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from db.config import db
 from models.iot import SensorData, SensorDataDb, SensorState
-from datetime import datetime
+from datetime import datetime, timezone
 from utils import config
 import socketio
 from typing import Any, List
@@ -30,7 +30,7 @@ async def post_sensor_data(data: SensorData, request: Request, key: str):
         return JSONResponse({"message": "Invalid key"}, status_code=status.HTTP_400_BAD_REQUEST)
 
     leg_data={
-        "date_added": datetime.utcnow(),
+        "date_added": datetime.now(tz=timezone.utc),
         "short_id": generate_short_id(),
         **data.dict()
     }
