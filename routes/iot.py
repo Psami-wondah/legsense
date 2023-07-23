@@ -19,7 +19,8 @@ iot = APIRouter(
 )
 
 mgr = socketio.AsyncRedisManager(config.REDIS_URL)
-sio: Any = socketio.AsyncServer(async_mode="asgi", client_manager=mgr, cors_allowed_origins="*")
+sio: Any = socketio.AsyncServer(
+    async_mode="asgi", client_manager=mgr, cors_allowed_origins="*")
 
 
 @iot.post('/sensor-data')
@@ -29,14 +30,14 @@ async def post_sensor_data(data: SensorData, request: Request, key: str):
     if key != config.SOCKET_PROTECT_TOKEN:
         return JSONResponse({"message": "Invalid key"}, status_code=status.HTTP_400_BAD_REQUEST)
 
-    leg_data={
+    leg_data = {
         "date_added": datetime.now(tz=timezone.utc),
         "short_id": generate_short_id(),
         **data.dict()
     }
     state = db.sensorstate.find_one({"name": "sensor_state"})
     if state.get('active'):
-        sio_data = {**leg_data, "date_added":str(leg_data["date_added"])}
+        sio_data = {**leg_data, "date_added": str(leg_data["date_added"])}
         db.legdata.insert_one(leg_data)
 
         await sio.emit("new_sensor_data", sio_data)
@@ -55,15 +56,19 @@ async def get_sensor_data(key: str):
     leg_data = [SensorDataDb(**leg_datum) for leg_datum in db_leg_data]
     return paginate(leg_data)
 
+
+# turning on and off the sensor
 @iot.post('/sensor-state')
 async def change_sensor_state(data: SensorState, key: str):
     if not key:
         return JSONResponse({"message": "pass in key"}, status_code=status.HTTP_400_BAD_REQUEST)
     if key != config.SOCKET_PROTECT_TOKEN:
         return JSONResponse({"message": "Invalid key"}, status_code=status.HTTP_400_BAD_REQUEST)
-    db.sensorstate.find_one_and_update({"name": "sensor_state"}, {"$set": {"active": data.active}})
+    db.sensorstate.find_one_and_update({"name": "sensor_state"}, {
+                                       "$set": {"active": data.active}})
     state = db.sensorstate.find_one({"name": "sensor_state"})
     return SensorState(**state)
+
 
 @iot.get('/sensor-state')
 async def get_sensor_state(key: str):
@@ -74,7 +79,8 @@ async def get_sensor_state(key: str):
     state = db.sensorstate.find_one({"name": "sensor_state"})
     return SensorState(**state)
 
-@sio.on("connect") 
+
+@sio.on("connect")
 async def connect(sid, env, auth):
     if auth:
         token = auth["token"]
