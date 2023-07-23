@@ -1,4 +1,4 @@
-name: Deploy to Linode
+name: Deploy to AWS EC2
 
 on:
   push:
