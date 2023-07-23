@@ -1,6 +1,17 @@
 version: "3.9"
 
 services:
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - redis:/data
+    expose:
+      - 6379
+
   legsense-api:
     build: .
     command: sh entry-point.sh
@@ -11,3 +22,9 @@ services:
     expose:
       - 8000
     restart: always
+    depends_on:
+      - redis
+
+volumes:
+  redis:
+    driver: local
